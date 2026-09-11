@@ -3,4 +3,12 @@ project.lock.json
 bin/
 obj/
 .vs/
+.env
+*.log
+.DS_Store
+__pycache__/
 node_modules/
+.terraform/
+*.tfstate
+*.tfstate.backup
+.vscode/
