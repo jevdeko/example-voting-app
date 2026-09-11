@@ -26,6 +26,8 @@ FROM base AS final
 RUN groupadd -r appuser && useradd -r -g appuser appuser && \
     chown -R appuser:appuser /usr/local/app
 
+ENV HOME=/usr/local/app    
+
 # Copy our code from the current folder to the working directory inside the container and change owner to the appuser
 COPY --chown=appuser:appuser . .
 
