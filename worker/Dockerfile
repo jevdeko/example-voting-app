@@ -23,6 +23,10 @@ RUN dotnet publish -c release -o /app -a $TARGETARCH --self-contained false --no
 
 # app image
 FROM mcr.microsoft.com/dotnet/runtime:7.0
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 WORKDIR /app
-COPY --from=build /app .
+COPY --from=build --chown=appuser:appuser /app .
+ENV HOME=/app
+# hadolint ignore=DL3066
+USER appuser
 ENTRYPOINT ["dotnet", "Worker.dll"]
