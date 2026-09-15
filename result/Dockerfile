@@ -24,5 +24,7 @@ COPY --chown=node:node . .
 ENV PORT=5001
 EXPOSE 5001
 
+USER node
+
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "server.js"]
