@@ -2,6 +2,7 @@
 FROM python:3.11-slim AS base
 
 # Add curl for healthcheck
+# hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
@@ -15,18 +16,27 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # dev defines a stage for development, where it'll watch for filesystem changes
 FROM base AS dev
-RUN pip install watchdog
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir watchdog
 ENV FLASK_ENV=development
 CMD ["python", "app.py"]
 
 # final defines the stage that will bundle the application for production
 FROM base AS final
 
-# Copy our code from the current folder to the working directory inside the container
-COPY . .
+# Create appuser and add group appuser
+RUN groupadd -r appuser && useradd -r -g appuser appuser && \
+    chown -R appuser:appuser /usr/local/app
 
-# Make port 80 available for links and/or publish
-EXPOSE 80
+ENV HOME=/usr/local/app    
+
+# Copy our code from the current folder to the working directory inside the container and change owner to the appuser
+COPY --chown=appuser:appuser . .
+
+# Make port 5000 available for links and/or publish
+EXPOSE 5000
+# hadolint ignore=DL3066
+USER appuser
 
 # Define our command to be run when launching the container
-CMD ["gunicorn", "app:app", "-b", "0.0.0.0:80", "--log-file", "-", "--access-logfile", "-", "--workers", "4", "--keep-alive", "0"]
+CMD ["gunicorn", "app:app", "-b", "0.0.0.0:5000", "--log-file", "-", "--access-logfile", "-", "--workers", "4", "--keep-alive", "0"]

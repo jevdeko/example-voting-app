@@ -1,6 +1,7 @@
 FROM node:18-slim
 
 # add curl for healthcheck
+# hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl tini && \
     rm -rf /var/lib/apt/lists/*
@@ -8,18 +9,22 @@ RUN apt-get update && \
 WORKDIR /usr/local/app
 
 # have nodemon available for local dev use (file watching)
+# hadolint ignore=DL3016
 RUN npm install -g nodemon
 
 COPY package*.json ./
 
 RUN npm ci && \
  npm cache clean --force && \
- mv /usr/local/app/node_modules /node_modules
+ mv /usr/local/app/node_modules /node_modules && \
+ chown -R node:node /node_modules /usr/local/app
 
-COPY . .
+COPY --chown=node:node . .
 
-ENV PORT=80
-EXPOSE 80
+ENV PORT=5001
+EXPOSE 5001
+
+USER node
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "server.js"]
