@@ -22,8 +22,8 @@ A multi-service application for practicing DevOps workflows: from local containe
 
 ## Roadmap
 - [x] Repository structure
-- [ ] Docker: containerization of services
-- [ ] Docker Compose: run locally
+- [x] Docker: containerization of services
+- [x] Docker Compose: run locally
 - [ ] CI: GitHub Actions
 - [ ] Kubernetes (minikube/kind)
 - [ ] Terraform: AWS infrastructure
