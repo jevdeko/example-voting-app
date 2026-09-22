@@ -6,39 +6,41 @@ services:
   vote:
     build: 
       context: ./vote
-      target: dev
+      target: final
     depends_on:
       redis:
         condition: service_healthy
     healthcheck: 
-      test: ["CMD", "curl", "-f", "http://localhost"]
-      interval: 15s
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 10s
-    volumes:
-     - ./vote:/usr/local/app
     ports:
-      - "8080:80"
+      - "5000:5000"  
     networks:
       - front-tier
       - back-tier
+    restart: unless-stopped  
 
   result:
-    build: ./result
-    # use nodemon rather than node for local dev
-    entrypoint: nodemon --inspect=0.0.0.0 server.js
+    build:
+      context: ./result
     depends_on:
       db:
         condition: service_healthy 
-    volumes:
-      - ./result:/usr/local/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     ports:
-      - "8081:80"
-      - "127.0.0.1:9229:9229"
+      - "5001:5001"  
     networks:
       - front-tier
       - back-tier
+    restart: unless-stopped
 
   worker:
     build:
@@ -52,28 +54,32 @@ services:
       - back-tier
 
   redis:
-    image: redis:alpine
-    volumes:
-      - "./healthchecks:/healthchecks"
+    image: redis:7-alpine
     healthcheck:
-      test: /healthchecks/redis.sh
+      test: ["CMD", "redis-cli", "ping"]
       interval: "5s"
+      timeout: 3s
+      retries: 5
     networks:
       - back-tier
+    restart: unless-stopped
 
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-    volumes:
-      - "db-data:/var/lib/postgresql/data"
-      - "./healthchecks:/healthchecks"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     healthcheck:
-      test: /healthchecks/postgres.sh
-      interval: "5s"
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - db-data:/var/lib/postgresql/data
     networks:
       - back-tier
+    restart: unless-stopped
 
   # this service runs once to seed the database with votes
   # it won't run unless you specify the "seed" profile
